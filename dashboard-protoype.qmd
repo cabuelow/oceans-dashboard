@@ -1,0 +1,200 @@
+---
+title: "Oceans MEL dashboard"
+format: 
+  dashboard:
+      scrolling: true
+theme: flatly
+logo: images/www-logo.jpeg
+server: shiny
+---
+
+```{r}
+#| context: setup
+#| include: false
+library(shiny)
+library(tmap)
+library(sf)
+library(tidyverse)
+tmap_mode('view')
+data('World')
+set.seed(123)
+
+World <- World %>% mutate(name = as.character(name)) %>% mutate(name = ifelse(name == 'United States', 'Alaska', name)) %>% filter(name != 'Antarctica')
+Region <- c('Arctic', rep('Eastern Pacific', 5), rep('Southwest Indian Ocean', 3), rep('Western Pacific',3))
+Country <- c('Alaska', 'Mexico', 'Colombia', 'Ecuador', 'Peru', 'Chile', 'Madagascar', 'Mozambique', 'Tanzania', 'Papua New Guinea', 'Indonesia', 'Fiji')
+Countrylist <- 1:length(Country)
+names(Countrylist) <- Country
+tmp <- list()
+for(i in seq_along(Country)){
+  
+  tmp[[i]] <- data.frame(Region = Region[i], 
+                         Country = Country[i],
+                         Year = seq(2020, 2024, by = 1),
+                         Marine_Red_List = runif(5, 0, 1)*c(0.1, 0.2, 0.5, 0.8),
+                         Marine_Living_Planet = runif(5, 0, 0.2)*c(0.1, 0.6, 0.5, 0.8),
+                         Fisheries_Stock_Condition = runif(5, 0, 0.5)*c(0.4, 0.6, 0.5, 0.2),
+                         Habitat_Condition = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
+                         Effective_Protection = runif(5, 0, 1)*c(0.1, 0.6, 1, 1),
+                         Small_Scale_Fisheries_Rights = runif(5, 0, 0.2)*c(0.1, 0.6, 0.5, 0.8),
+                         Wealth_Relative_Index = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
+                         Human_Development_Index = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
+                         Climate_Adaptation_Plans = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
+                         Habitat_Carbon_Storage = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
+                         Carbon_Under_Effective_Protection = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2))
+}
+indicators <- do.call(rbind, tmp) %>% pivot_longer(cols = c(Marine_Red_List:Carbon_Under_Effective_Protection), names_to = 'Indicator', values_to = 'Value') %>% mutate(Indicator_category = case_when(Indicator == 'Marine_Red_List' ~ 'Nature',
+                                                                                                                                                                                                       Indicator == 'Marine_Living_Planet' ~ 'Nature',
+                                                                                                                                                                                                        Indicator == 'Fisheries_Stock_Condition' ~ 'Nature',
+                                                                                                                                                                                                       Indicator == 'Habitat_Condition' ~ 'Nature',
+                                                                                                                                                                                                       Indicator == 'Effective_Protection' ~ 'Nature',
+                                                                                                                                                                                                       Indicator == 'Small_Scale_Fisheries_Rights' ~ 'People',
+                                                                                                                                                                                                       Indicator == 'Wealth_Relative_Index' ~ 'People',
+                                                                                                                                                                                                       Indicator == 'Human_Development_Index' ~ 'People',
+                                                                                                                                                                                                       Indicator == 'Climate_Adaptation_Plans' ~ 'Climate',
+                                                                                                                                                                                                       Indicator == 'Habitat_Carbon_Storage' ~ 'Climate',
+                                                                                                                                                                                                       Indicator == 'Carbon_Under_Effective_Protection' ~ 'Climate'))
+base_targets <- data.frame(Region = rep(unique(Region), 2), Type = rep(c('Baseline_2020', 'Target_2030'), each = 4),
+                         Marine_Red_List = c(runif(4, 0,0.1),runif(4,0.8,1)),
+                         Marine_Living_Planet = c(runif(4, 0,0.1),runif(4,0.8,1)),
+                         Fisheries_Stock_Condition = c(runif(4, 0,0.1),runif(4,0.8,1)),
+                         Habitat_Condition = c(runif(4, 0,0.1),runif(4,0.8,1)),
+                         Effective_Protection = c(runif(4, 0,0.1),runif(4,0.8,1)),
+                         Small_Scale_Fisheries_Rights = c(runif(4, 0,0.1),runif(4,0.8,1)),
+                         Wealth_Relative_Index = c(runif(4, 0,0.1),runif(4,0.8,1)),
+                         Human_Development_Index = c(runif(4, 0,0.1),runif(4,0.8,1)),
+                         Climate_Adaptation_Plans = c(runif(4, 0,0.1),runif(4,0.8,1)),
+                         Habitat_Carbon_Storage = c(runif(4, 0,0.1),runif(4,0.8,1)),
+                         Carbon_Under_Effective_Protection = c(runif(4, 0,0.1),runif(4,0.8,1))) %>% 
+  pivot_longer(cols = c(Marine_Red_List:Carbon_Under_Effective_Protection), names_to = 'Indicator', values_to = 'Value')
+base_targets <- data.frame(Year = rep(c(2020:2024), each = nrow(base_targets)), base_targets)
+```
+
+# Main
+
+## Row
+
+### Column
+
+#### Row {height=60%}
+```{r}
+tmapOutput("map")
+```
+
+#### Row 
+##### Column
+###### Row {.toolbar}
+```{r}
+checkboxGroupInput("region", label = h5("Select Region"), choices = list("Arctic" = 1, "Eastern Pacific" = 2, "South-west Indian Ocean" = 3, "Western Pacific" = 4), selected = NULL)
+```
+
+##### Column
+###### Row {.toolbar}
+```{r}
+checkboxGroupInput("country", label = h5("Select Country"), choices = Countrylist, selected = NULL)
+```
+
+### Column
+
+#### Row {.tabset}
+
+##### People
+###### Row {.toolbar height=20%}
+```{r}
+checkboxGroupInput("people", label = h5("Choose indicator"), choices = list("Small Scale Fisheries Rights" = 1, "Wealth Relative Index" = 2, "Human Development Index" = 3), selected = NULL)
+checkboxInput("people_base", label = h6("Show Regional baseline(s) (2020)?"), value = FALSE)
+checkboxInput("people_targ", label = h6("Show Regional target(s) (2030)?"), value = FALSE)
+```
+###### Row {height=10%}
+```{r}
+textOutput('ppl_text')
+```
+###### Row
+```{r}
+plotOutput('ppl_plot')
+```
+
+##### Climate
+###### Row {.toolbar height=20%}
+```{r}
+checkboxGroupInput("climate", label = h5("Choose indicator"),choices = list("Climate Change Adaptation Plans" = 1, "Habitat Carbon Storage" = 2, "Carbon Under Effective Protection" = 3), selected = NULL)
+```
+###### Row {height=10%}
+```{r}
+textOutput('climate_text')
+```
+###### Row
+```{r}
+plotOutput('climate_plot')
+```
+
+##### Nature
+###### Row {.toolbar height=20%}
+```{r}
+checkboxGroupInput("nature", label = h5("Choose indicator"), choices = list("Marine Red List Index" = 1, "Marine Living Planet Index" = 2, "Fisheries Stock Condition" = 3, "Habitat Condition" = 4, "Effective Protection" = 5), selected = NULL)
+```
+###### Row {height=10%}
+```{r}
+textOutput('nature_text')
+```
+###### Row
+```{r}
+plotOutput('nature_plot')
+```
+
+```{r}
+#| context: server
+country_names <- data.frame(number = c(1:length(Country)), country = Country)
+region_names <- data.frame(number = c(1:4), region = unique(indicators$Region))
+ppl_indnames <- data.frame(number = c(1:3), ind = c("Small_Scale_Fisheries_Rights", "Wealth_Relative_Index", "Human_Development_Index"))
+
+mapdat <- reactive({
+  if(!is.null(input$region)){
+    region_select <- indicators %>% filter(Region %in% filter(region_names, number %in% c(input$region))$region) %>% pull(Country) %>% unique()
+  }
+  if(!is.null(input$region) | !is.null(input$country)){
+    World %>% filter(name %in% c(filter(country_names, number %in% c(input$country))$country, region_select))
+  }else{
+    World
+  }
+})
+
+indppl <- reactive({
+   country_indppl <- indicators %>% filter(Indicator_category == 'People' & Country %in% filter(country_names, number %in% c(input$country))$country & Indicator %in% filter(ppl_indnames, number %in% c(input$people))$ind) %>% mutate(RegionCountry = Country)
+   region_indppl <- indicators %>% filter(Indicator_category == 'People' & Region %in% filter(region_names, number %in% c(input$region))$region & Indicator %in% filter(ppl_indnames, number %in% c(input$people))$ind) %>% mutate(RegionCountry = Region)
+    baseline <- base_targets %>% filter(Type == 'Baseline_2020' & Region %in% filter(region_names, number %in% c(input$region))$region & Indicator %in% filter(ppl_indnames, number %in% c(input$people))$ind)
+    targets <- base_targets %>% filter(Type == 'Target_2030' & Region %in% filter(region_names, number %in% c(input$region))$region & Indicator %in% filter(ppl_indnames, number %in% c(input$people))$ind)
+   indicators <- bind_rows(country_indppl, region_indppl)
+  if(input$people_base == TRUE && input$people_targ == TRUE){
+   list(indicators, baseline, targets)
+    }else if(input$people_base == TRUE){
+      list(indicators, baseline)
+    }else if(input$people_targ == TRUE){
+      list(indicators, targets)
+    }else{
+     list(indicators)
+   }
+})
+
+output$map <- renderTmap({
+  qtm(mapdat(), fill = 'name', polygons.alpha = 0.5, fill.legend.show = F)
+})
+
+output$ppl_text <- renderText(
+  if(nrow(indppl()[[1]])==0){'Please choose Region(s) and/or Countries (left panels), and then indicator trends (above) to display'})
+
+output$ppl_plot <- renderPlot({
+  if(nrow(indppl()[[1]])>0){
+      if(length(indppl()) == 1){
+   ggplot(indppl()[[1]]) + aes(x = Year, y = Value, col = RegionCountry) + geom_point() + geom_smooth() + facet_wrap(~Indicator, ncol = 1, scales = 'free') + ylab('Standardised indicator value') + xlab('Year') + theme_classic() + theme(text = element_text(size = 20))}
+    else if(length(indppl()) == 2){
+         ggplot() + geom_point(data = indppl()[[1]], aes(x = Year, y = Value, col = RegionCountry)) + geom_smooth(data = indppl()[[1]], aes(x = Year, y = Value, col = RegionCountry)) + geom_line(data = indppl()[[2]], aes(x = Year, y = Value, col = Region), size = 3, alpha = 0.5, linetype = 'dashed') + facet_wrap(~Indicator, ncol = 1, scales = 'free') + ylab('Standardised indicator value') + xlab('Year') + theme_classic() + theme(text = element_text(size = 20))
+    }else if(length(indppl()) == 3){
+         ggplot() + geom_point(data = indppl()[[1]], aes(x = Year, y = Value, col = RegionCountry)) + geom_smooth(data = indppl()[[1]], aes(x = Year, y = Value, col = RegionCountry)) + geom_line(data = indppl()[[2]], aes(x = Year, y = Value, col = Region), size = 3, alpha = 0.5, linetype = 'dashed') + geom_line(data = indppl()[[3]], aes(x = Year, y = Value, col = Region), size = 3, alpha = 0.5, linetype = 'dashed') + facet_wrap(~Indicator, ncol = 1, scales = 'free') + ylab('Standardised indicator value') + xlab('Year') + theme_classic() + theme(text = element_text(size = 20))
+    }
+}
+  })
+```
+
+# Information
+
+Here can provide link to more information. E.g., links do data sources, etc

@@ -1,0 +1,14 @@
+name: oceans-dashboard-protoype
+title: oceans-dashboard-protoype
+username: cbuelow
+account: cbuelow
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 11485540
+bundleId: 8369953
+url: https://cbuelow.shinyapps.io/oceans-dashboard-protoype/
+version: 1
+quarto_version: 1.4.506
+quarto_engines: knitr
+asMultiple: FALSE
+asStatic: FALSE
