@@ -65,7 +65,7 @@ ul.task-list li input[type="checkbox"] {
 <div class="page-layout-custom quarto-dashboard-content bslib-gap-spacing html-fill-container dashboard-scrolling quarto-dashboard-pages">  
 
 <div class="bslib-grid-item html-fill-item tab-content bslib-grid" data-layout="flow" style="display: grid; grid-template-rows: minmax(3em, max-content); grid-auto-columns: minmax(0, 1fr);">
-<div id="main" class="dashboard-page tab-pane show active html-fill-item html-fill-container" data-title="Main" data-orientation="rows" aria-labelledby="tab-main">
+<div id="main" class="dashboard-page tab-pane show active html-fill-item html-fill-container" data-orientation="rows" data-title="Main" aria-labelledby="tab-main">
 <div class="html-fill-item html-fill-container bslib-grid" style="display: grid; grid-template-rows: minmax(3em, 1fr); grid-auto-columns: minmax(0, 1fr);">
 <div class="html-fill-item html-fill-container bslib-grid" style="display: grid; grid-template-columns: minmax(3em, 1fr) minmax(3em, 1fr);
 grid-auto-rows: minmax(0, 1fr);">
@@ -252,9 +252,7 @@ grid-auto-rows: minmax(0, 1fr);">
 <div class="checkbox">
 <label>
 <input id="people_base" type="checkbox" class="shiny-input-checkbox">
-<span>
-<h6>Show Regional baseline(s) (2020)?</h6>
-</span>
+<span>Show Regional baseline(s) (2020)?</span>
 </label>
 </div>
 </div>
@@ -264,9 +262,7 @@ grid-auto-rows: minmax(0, 1fr);">
 <div class="checkbox">
 <label>
 <input id="people_targ" type="checkbox" class="shiny-input-checkbox">
-<span>
-<h6>Show Regional target(s) (2030)?</h6>
-</span>
+<span>Show Regional target(s) (2030)?</span>
 </label>
 </div>
 </div>
@@ -453,7 +449,7 @@ grid-auto-rows: minmax(0, 1fr);">
 </div>
 </div>
 </div>
-<div id="information" class="dashboard-page tab-pane grid-skip html-fill-item html-fill-container" data-title="Information" data-orientation="rows" aria-labelledby="tab-information">
+<div id="information" class="dashboard-page tab-pane grid-skip html-fill-item html-fill-container" data-orientation="rows" data-title="Information" aria-labelledby="tab-information">
 <div class="html-fill-item html-fill-container bslib-grid" style="display: grid; grid-template-rows: minmax(3em, max-content); grid-auto-columns: minmax(0, 1fr);">
 <div class="card html-fill-item html-fill-container bslib-card" data-layout="flow" data-bslib-card-init="" data-require-bs-caller="card()">
 <div class="card-body html-fill-item html-fill-container">
@@ -464,43 +460,49 @@ library(tmap)
 library(sf)
 library(tidyverse)
 tmap_mode('view')
-data('World')
+#data('World')
 set.seed(123)
 
-World <- World %>% mutate(name = as.character(name)) %>% mutate(name = ifelse(name == 'United States', 'Alaska', name)) %>% filter(name != 'Antarctica')
+col_pal <- c("#000000","#004949","#009292","#ff6db6","#ffb6db",
+ "#490092","#006ddb","#b66dff","#6db6ff","#b6dbff",
+ "#920000","#924900","#db6d00","#24ff24","#ffff6d", 'grey23')
+World <- st_read('world.gpkg') %>% mutate(name = as.character(name)) %>% mutate(name = ifelse(name == 'United States', 'Alaska', name)) %>% filter(name != 'Antarctica')
+regions <- st_read('regions.gpkg')
 Region <- c('Arctic', rep('Eastern Pacific', 5), rep('Southwest Indian Ocean', 3), rep('Western Pacific',3))
 Country <- c('Alaska', 'Mexico', 'Colombia', 'Ecuador', 'Peru', 'Chile', 'Madagascar', 'Mozambique', 'Tanzania', 'Papua New Guinea', 'Indonesia', 'Fiji')
 Countrylist <- 1:length(Country)
 names(Countrylist) <- Country
-tmp <- list()
-for(i in seq_along(Country)){
+#tmp <- list()
+#for(i in seq_along(Country)){
   
-  tmp[[i]] <- data.frame(Region = Region[i], 
-                         Country = Country[i],
-                         Year = seq(2020, 2024, by = 1),
-                         Marine_Red_List = runif(5, 0, 1)*c(0.1, 0.2, 0.5, 0.8),
-                         Marine_Living_Planet = runif(5, 0, 0.2)*c(0.1, 0.6, 0.5, 0.8),
-                         Fisheries_Stock_Condition = runif(5, 0, 0.5)*c(0.4, 0.6, 0.5, 0.2),
-                         Habitat_Condition = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
-                         Effective_Protection = runif(5, 0, 1)*c(0.1, 0.6, 1, 1),
-                         Small_Scale_Fisheries_Rights = runif(5, 0, 0.2)*c(0.1, 0.6, 0.5, 0.8),
-                         Wealth_Relative_Index = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
-                         Human_Development_Index = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
-                         Climate_Adaptation_Plans = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
-                         Habitat_Carbon_Storage = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
-                         Carbon_Under_Effective_Protection = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2))
-}
-indicators <- do.call(rbind, tmp) %>% pivot_longer(cols = c(Marine_Red_List:Carbon_Under_Effective_Protection), names_to = 'Indicator', values_to = 'Value') %>% mutate(Indicator_category = case_when(Indicator == 'Marine_Red_List' ~ 'Nature',
-                                                                                                                                                                                                       Indicator == 'Marine_Living_Planet' ~ 'Nature',
-                                                                                                                                                                                                        Indicator == 'Fisheries_Stock_Condition' ~ 'Nature',
-                                                                                                                                                                                                       Indicator == 'Habitat_Condition' ~ 'Nature',
-                                                                                                                                                                                                       Indicator == 'Effective_Protection' ~ 'Nature',
-                                                                                                                                                                                                       Indicator == 'Small_Scale_Fisheries_Rights' ~ 'People',
-                                                                                                                                                                                                       Indicator == 'Wealth_Relative_Index' ~ 'People',
-                                                                                                                                                                                                       Indicator == 'Human_Development_Index' ~ 'People',
-                                                                                                                                                                                                       Indicator == 'Climate_Adaptation_Plans' ~ 'Climate',
-                                                                                                                                                                                                       Indicator == 'Habitat_Carbon_Storage' ~ 'Climate',
-                                                                                                                                                                                                       Indicator == 'Carbon_Under_Effective_Protection' ~ 'Climate'))
+ # tmp[[i]] <- data.frame(Region = Region[i], 
+  #                       Country = Country[i],
+   #                      Year = seq(2020, 2024, by = 1),
+    #                     Marine_Red_List = runif(5, 0, 1)*c(0.1, 0.2, 0.5, 0.8),
+     #                    Marine_Living_Planet = runif(5, 0, 0.2)*c(0.1, 0.6, 0.5, 0.8),
+      #                   Fisheries_Stock_Condition = runif(5, 0, 0.5)*c(0.4, 0.6, 0.5, 0.2),
+       #                  Habitat_Condition = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
+        #                 Effective_Protection = runif(5, 0, 1)*c(0.1, 0.6, 1, 1),
+         #                Small_Scale_Fisheries_Rights = runif(5, 0, 0.2)*c(0.1, 0.6, 0.5, 0.8),
+          #               Wealth_Relative_Index = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
+           #              Human_Development_Index = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
+            #             Climate_Adaptation_Plans = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
+             #            Habitat_Carbon_Storage = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2),
+              #           Carbon_Under_Effective_Protection = runif(5, 0, 1)*c(0.4, 0.6, 0.5, 0.2))
+#}
+#indicators <- do.call(rbind, tmp) %>% pivot_longer(cols = c(Marine_Red_List:Carbon_Under_Effective_Protection), names_to = 'Indicator', values_to = 'Value') %>% mutate(Indicator_category = case_when(Indicator == 'Marine_Red_List' ~ 'Nature',
+                                                                                                                     #                                                                                  Indicator == 'Marine_Living_Planet' ~ 'Nature',
+                                                                                                                      #                                                                                  Indicator == 'Fisheries_Stock_Condition' ~ 'Nature',
+   #                                                                                                                                                                                                    Indicator == 'Habitat_Condition' ~ 'Nature',
+                                                                                                                        #                                                                               Indicator == 'Effective_Protection' ~ 'Nature',
+                                                                                                                         #                                                                              Indicator == 'Small_Scale_Fisheries_Rights' ~ 'People',
+                                                                                                                          #                                                                             Indicator == 'Wealth_Relative_Index' ~ 'People',
+                                                                                                                           #                                                                            Indicator == 'Human_Development_Index' ~ 'People',
+                                                                                                                            #                                                                           Indicator == 'Climate_Adaptation_Plans' ~ 'Climate',
+                                                                                                                             #                                                                          Indicator == 'Habitat_Carbon_Storage' ~ 'Climate',
+          #                                                                                                                                                                                             Indicator == 'Carbon_Under_Effective_Protection' ~ 'Climate'))
+#write.csv(indicators, 'indicators.csv', row.names = F)
+indicators <- read.csv('indicators.csv')
 base_targets <- data.frame(Region = rep(unique(Region), 2), Type = rep(c('Baseline_2020', 'Target_2030'), each = 4),
                          Marine_Red_List = c(runif(4, 0,0.1),runif(4,0.8,1)),
                          Marine_Living_Planet = c(runif(4, 0,0.1),runif(4,0.8,1)),
@@ -523,13 +525,18 @@ region_names <- data.frame(number = c(1:4), region = unique(indicators$Region))
 ppl_indnames <- data.frame(number = c(1:3), ind = c("Small_Scale_Fisheries_Rights", "Wealth_Relative_Index", "Human_Development_Index"))
 
 mapdat <- reactive({
-  if(!is.null(input$region)){
-    region_select <- indicators %>% filter(Region %in% filter(region_names, number %in% c(input$region))$region) %>% pull(Country) %>% unique()
-  }
-  if(!is.null(input$region) | !is.null(input$country)){
-    World %>% filter(name %in% c(filter(country_names, number %in% c(input$country))$country, region_select))
+  if(!is.null(input$region) & !is.null(input$country)){
+    countrypolys <- World %>% filter(name %in% filter(country_names, number %in% c(input$country))$country)
+    regionpolys <- regions %>% filter(Region %in% filter(region_names, number %in% c(input$region))$region)
+    list(countrypolys, regionpolys)
+  }else if(!is.null(input$region)){
+    regionpolys <- regions %>% filter(Region %in% filter(region_names, number %in% c(input$region))$region)
+    list(regionpolys)
+  }else if(!is.null(input$country)){
+    countrypolys <- World %>% filter(name %in% filter(country_names, number %in% c(input$country))$country)
+    list(countrypolys)
   }else{
-    World
+    list(World)
   }
 })
 
@@ -551,20 +558,27 @@ indppl <- reactive({
 })
 
 output$map <- renderTmap({
-  qtm(mapdat(), fill = 'name', polygons.alpha = 0.5, fill.legend.show = F)
+  if(length(mapdat())>1){
+    alldat <- rbind(select(mapdat()[[2]], geom), select(mapdat()[[1]], geom))
+    qtm(mapdat()[[2]], fill = 'Region', polygons.alpha = 0.5, fill.legend.show = F, bbox = st_bbox(alldat)) + qtm(mapdat()[[1]], fill = 'name', polygons.alpha = 0.5, fill.legend.show = F, bbox = st_bbox(alldat))}else if(ncol(mapdat()[[1]])>2){
+      qtm(mapdat()[[1]], fill = 'name', polygons.alpha = 0.5, fill.legend.show = F)
+    }else{
+      qtm(mapdat()[[1]], fill = 'Region', polygons.alpha = 0.5, fill.legend.show = F)
+    }
 })
 
 output$ppl_text <- renderText(
-  if(nrow(indppl()[[1]])==0){'Please choose Region(s) and/or Countries (left panels), and then indicator trends (above) to display'})
+  if(nrow(indppl()[[1]])==0){'Please choose Region(s) and/or Countries (left panels), and then indicator trends (above) to display'}
+  )
 
 output$ppl_plot <- renderPlot({
   if(nrow(indppl()[[1]])>0){
       if(length(indppl()) == 1){
-   ggplot(indppl()[[1]]) + aes(x = Year, y = Value, col = RegionCountry) + geom_point() + geom_smooth() + facet_wrap(~Indicator, ncol = 1, scales = 'free') + ylab('Standardised indicator value') + xlab('Year') + theme_classic() + theme(text = element_text(size = 20))}
+   ggplot(indppl()[[1]]) + aes(x = Year, y = Value, col = RegionCountry) + geom_point() + geom_smooth() + facet_wrap(~Indicator, ncol = 1, scales = 'free') + ylab('Standardised indicator value') + xlab('Year') + scale_color_manual(values = col_pal) + theme_classic() + theme(text = element_text(size = 20), legend.title = element_blank())}
     else if(length(indppl()) == 2){
-         ggplot() + geom_point(data = indppl()[[1]], aes(x = Year, y = Value, col = RegionCountry)) + geom_smooth(data = indppl()[[1]], aes(x = Year, y = Value, col = RegionCountry)) + geom_line(data = indppl()[[2]], aes(x = Year, y = Value, col = Region), size = 3, alpha = 0.5, linetype = 'dashed') + facet_wrap(~Indicator, ncol = 1, scales = 'free') + ylab('Standardised indicator value') + xlab('Year') + theme_classic() + theme(text = element_text(size = 20))
+         ggplot() + geom_point(data = indppl()[[1]], aes(x = Year, y = Value, col = RegionCountry)) + geom_smooth(data = indppl()[[1]], aes(x = Year, y = Value, col = RegionCountry)) + geom_line(data = indppl()[[2]], aes(x = Year, y = Value, col = Region), size = 2, alpha = 0.5, linetype = 'dashed') + facet_wrap(~Indicator, ncol = 1, scales = 'free') + ylab('Standardised indicator value') + xlab('Year') + scale_color_manual(values = col_pal) + theme_classic() + theme(text = element_text(size = 20), legend.title = element_blank())
     }else if(length(indppl()) == 3){
-         ggplot() + geom_point(data = indppl()[[1]], aes(x = Year, y = Value, col = RegionCountry)) + geom_smooth(data = indppl()[[1]], aes(x = Year, y = Value, col = RegionCountry)) + geom_line(data = indppl()[[2]], aes(x = Year, y = Value, col = Region), size = 3, alpha = 0.5, linetype = 'dashed') + geom_line(data = indppl()[[3]], aes(x = Year, y = Value, col = Region), size = 3, alpha = 0.5, linetype = 'dashed') + facet_wrap(~Indicator, ncol = 1, scales = 'free') + ylab('Standardised indicator value') + xlab('Year') + theme_classic() + theme(text = element_text(size = 20))
+         ggplot() + geom_point(data = indppl()[[1]], aes(x = Year, y = Value, col = RegionCountry)) + geom_smooth(data = indppl()[[1]], aes(x = Year, y = Value, col = RegionCountry)) + geom_line(data = indppl()[[2]], aes(x = Year, y = Value, col = Region), size = 2, alpha = 0.5, linetype = 'dashed') + geom_line(data = indppl()[[3]], aes(x = Year, y = Value, col = Region), size = 2, alpha = 0.5, linetype = 'dashed') + facet_wrap(~Indicator, ncol = 1, scales = 'free') + ylab('Standardised indicator value') + xlab('Year') + scale_color_manual(values = col_pal) + theme_classic() + theme(text = element_text(size = 20), legend.title = element_blank())
     }
 }
   })
