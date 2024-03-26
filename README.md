@@ -7,7 +7,10 @@ This repository contains code to create an Oceans Dashboard.
 #### Map
 
 -[ ] Change name of basemap layers to Gray Canvas, Street Map, Topo Map
--[ ] Add Ocean basemap. -[ ] If these features don't slow down the app,
+
+-[ ] Add Ocean basemap. 
+
+-[ ] If these features don't slow down the app,
 can you add:
 
 -   MPAs from the WDPA data set (only when countries are selected)
