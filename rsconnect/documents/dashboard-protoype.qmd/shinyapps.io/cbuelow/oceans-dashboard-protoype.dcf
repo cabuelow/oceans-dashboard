@@ -5,7 +5,7 @@ account: cbuelow
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 11485540
-bundleId: 8369953
+bundleId: 8370576
 url: https://cbuelow.shinyapps.io/oceans-dashboard-protoype/
 version: 1
 quarto_version: 1.4.506
